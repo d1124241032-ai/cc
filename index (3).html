@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>張丞佑bmi 計算</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #e0e7ff 100%);
+            min-height: 100vh;
+        }
+
+        /* 玻璃擬態 */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        /* 指針旋轉動畫 Transition */
+        #meterGauge {
+            transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* 按鈕縮放反饋 */
+        .btn-press {
+            transition: transform 0.1s ease, box-shadow 0.2s ease;
+        }
+        .btn-press:active {
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-800 relative">
+
+    <!-- 頁首與標題 HUD -->
+    <header class="w-full z-30 p-4 md:p-6 flex justify-between items-center glass-panel border-b border-white/60 shadow-lg fixed top-0 left-0">
+        <!-- 左上角：大型粗體標題 -->
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg text-white font-black text-2xl border-2 border-white">
+                <i class="fa-solid fa-weight-scale"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl md:text-4xl font-black tracking-wide text-slate-900 drop-shadow-sm">
+                    張丞佑bmi 計算
+                </h1>
+                <p class="text-xs md:text-sm font-semibold text-blue-600">健康體態計算與闖關遊戲</p>
+            </div>
+        </div>
+
+        <!-- 右上角：分數與成績榜 -->
+        <div class="flex items-center gap-3">
+            <!-- 音效開關 -->
+            <button id="soundToggle" class="p-3 bg-white/80 hover:bg-white text-slate-700 rounded-2xl shadow border border-white/60 transition">
+                <i id="soundIcon" class="fa-solid fa-volume-high text-lg"></i>
+            </button>
+
+            <!-- 數據計分板 -->
+            <div class="flex items-center gap-4 bg-slate-900/90 text-white px-5 py-2.5 rounded-2xl border border-white/20 shadow-2xl">
+                <div class="text-right">
+                    <div class="text-[10px] uppercase font-bold text-amber-400 tracking-wider">成就積分</div>
+                    <div id="totalScore" class="text-xl md:text-2xl font-black text-amber-300">0 Pts</div>
+                </div>
+                <div class="w-px h-8 bg-white/20"></div>
+                <div class="text-right">
+                    <div class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">關卡成績</div>
+                    <div id="gameRank" class="text-xl md:text-2xl font-black text-emerald-400">新手</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="w-full flex-1 pt-28 pb-12 px-4 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- 左半部：BMI 動態計算器 -->
+        <section class="lg:col-span-7 glass-panel rounded-3xl p-6 md:p-8 shadow-xl border border-white/80 flex flex-col gap-6">
+            <div class="flex items-center justify-between border-b border-slate-200/80 pb-4">
+                <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-blue-500"></i> BMI 即時計算儀表板
+                </h2>
+                <span class="text-xs font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">動態量測</span>
+            </div>
+
+            <!-- 輸入表單 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-extrabold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-ruler-vertical text-cyan-500"></i> 身高 (cm)
+                    </label>
+                    <input type="number" id="heightInput" placeholder="例如：170" class="w-full p-4 rounded-2xl bg-white/90 border-2 border-slate-200 text-slate-800 font-black text-lg focus:outline-none focus:border-blue-500 shadow-inner transition">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-extrabold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-weight-hanging text-indigo-500"></i> 體重 (kg)
+                    </label>
+                    <input type="number" id="weightInput" placeholder="例如：65" class="w-full p-4 rounded-2xl bg-white/90 border-2 border-slate-200 text-slate-800 font-black text-lg focus:outline-none focus:border-blue-500 shadow-inner transition">
+                </div>
+            </div>
+
+            <!-- 計算按鈕 -->
+            <button id="calcBtn" class="btn-press w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-lg rounded-2xl shadow-xl flex items-center justify-center gap-2">
+                <i class="fa-solid fa-bolt"></i> 開始計算 BMI
+            </button>
+
+            <!-- 結果顯示面板 -->
+            <div id="resultCard" class="mt-2 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+                <!-- 半圓儀表板視覺 -->
+                <div class="relative w-40 h-28 flex justify-center items-end">
+                    <!-- 彩色弧線背景 -->
+                    <div class="w-40 h-20 rounded-t-full border-[14px] border-slate-700 border-b-0 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-r from-sky-400 via-emerald-400 via-amber-400 to-rose-500"></div>
+                    </div>
+                    <!-- 指針 -->
+                    <div id="meterGauge" class="w-1.5 h-16 bg-white absolute bottom-1 origin-bottom rounded-full shadow-lg" style="transform: rotate(-90deg);"></div>
+                    <div class="w-6 h-6 bg-white rounded-full absolute bottom-0 shadow-md border-4 border-slate-900"></div>
+                </div>
+
+                <!-- 數值與建議說明 -->
+                <div class="flex-1 text-center md:text-left flex flex-col gap-2">
+                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">您的計算結果</div>
+                    <div class="flex items-baseline justify-center md:justify-start gap-2">
+                        <span id="bmiVal" class="text-4xl md:text-5xl font-black text-cyan-300">0.0</span>
+                        <span id="bmiCategory" class="text-lg font-bold px-3 py-1 rounded-xl bg-slate-800 text-slate-300 border border-slate-700">尚未計算</span>
+                    </div>
+                    <p id="bmiAdvice" class="text-xs md:text-sm text-slate-300 font-semibold leading-relaxed">
+                        請在上方面板輸入您的身高與體重，點擊計算獲得專屬健康評語。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右半部：健康大考驗 Mini-Game -->
+        <section class="lg:col-span-5 glass-panel rounded-3xl p-6 md:p-8 shadow-xl border border-white/80 flex flex-col gap-6">
+            <div class="flex items-center justify-between border-b border-slate-200/80 pb-4">
+                <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-gamepad text-purple-600"></i> 健康大考驗 Mini-Game
+                </h2>
+                <span id="quizBadge" class="text-xs font-bold text-purple-600 bg-purple-100 px-3 py-1 rounded-full">賺取積分</span>
+            </div>
+
+            <!-- 小遊戲卡片 -->
+            <div id="gameCard" class="bg-white/90 rounded-2xl p-6 border-2 border-slate-200/80 shadow-md flex flex-col gap-4">
+                <div class="flex justify-between items-center text-xs font-bold text-slate-500">
+                    <span id="questionNum">題目 1 / 5</span>
+                    <span class="text-purple-600">+20 分/題</span>
+                </div>
+
+                <h3 id="questionText" class="text-base font-extrabold text-slate-800 leading-relaxed min-h-[50px]">
+                    題目載入中...
+                </h3>
+
+                <div id="optionsContainer" class="flex flex-col gap-2.5">
+                    <!-- 選項動態生成 -->
+                </div>
+
+                <div id="quizFeedback" class="hidden p-3 rounded-xl text-xs font-bold border">
+                    <!-- 即時答題反饋 -->
+                </div>
+            </div>
+
+            <!-- 下一題 / 重置按鈕 -->
+            <button id="nextQuizBtn" class="btn-press hidden w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2">
+                下一題考驗 <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </section>
+
+    </main>
+
+    <!-- Web Audio & 遊戲邏輯腳本 -->
+    <script>
+        // 音效引擎 (Web Audio API)
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+            }
+            playClick() {
+                if (!isSoundEnabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(700, this.ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            }
+            playSuccess() {
+                if (!isSoundEnabled) return;
+                this.init();
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.08);
+                    gain.gain.setValueAtTime(0.12, this.ctx.currentTime + i * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + i * 0.08 + 0.2);
+                    osc.start(this.ctx.currentTime + i * 0.08);
+                    osc.stop(this.ctx.currentTime + i * 0.08 + 0.2);
+                });
+            }
+            playWrong() {
+                if (!isSoundEnabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(260, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(160, this.ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            }
+        }
+
+        const sound = new SoundEngine();
+        let isSoundEnabled = true;
+        let score = 0;
+
+        // 音效切換
+        document.getElementById('soundToggle').addEventListener('click', () => {
+            isSoundEnabled = !isSoundEnabled;
+            document.getElementById('soundIcon').className = isSoundEnabled ? 'fa-solid fa-volume-high text-lg' : 'fa-solid fa-volume-xmark text-lg text-rose-500';
+        });
+
+        // 1. BMI 計算器邏輯
+        document.getElementById('calcBtn').addEventListener('click', () => {
+            sound.playClick();
+            const height = parseFloat(document.getElementById('heightInput').value);
+            const weight = parseFloat(document.getElementById('weightInput').value);
+
+            if (!height || !weight || height <= 0 || weight <= 0) {
+                alert("請輸入有效的身高與體重數值！");
+                return;
+            }
+
+            const bmi = weight / Math.pow(height / 100, 2);
+            const bmiFormatted = bmi.toFixed(1);
+
+            document.getElementById('bmiVal').innerText = bmiFormatted;
+
+            const gauge = document.getElementById('meterGauge');
+            const catBadge = document.getElementById('bmiCategory');
+            const advice = document.getElementById('bmiAdvice');
+
+            // 角度轉換 (-90deg 到 90deg)
+            let angle = -90;
+            let catText = "";
+            let catColor = "";
+            let adviceText = "";
+
+            if (bmi < 18.5) {
+                angle = -60;
+                catText = "體重過輕";
+                catColor = "bg-sky-500 text-white";
+                adviceText = "您的體重偏輕，建議適度增加營養攝取並搭配肌力訓練！";
+            } else if (bmi < 24) {
+                angle = -15;
+                catText = "理想範圍";
+                catColor = "bg-emerald-500 text-white";
+                adviceText = "太棒了！您的 BMI 處於非常健康的標準範圍，請繼續保持良好的飲食與運動習慣！";
+            } else if (bmi < 27) {
+                angle = 35;
+                catText = "過重";
+                catColor = "bg-amber-500 text-white";
+                adviceText = "您的體重有些偏重囉！建議控制熱量攝取並增加每週規律有氧運動時間。";
+            } else {
+                angle = 75;
+                catText = "肥胖";
+                catColor = "bg-rose-500 text-white";
+                adviceText = "體重已達到肥胖範圍，建議諮詢營養師或專業醫師規畫健康的減重計畫！";
+            }
+
+            gauge.style.transform = `rotate(${angle}deg)`;
+            catBadge.innerText = catText;
+            catBadge.className = `text-lg font-bold px-3 py-1 rounded-xl ${catColor}`;
+            advice.innerText = adviceText;
+
+            // 增加計算積分
+            addScore(10);
+            sound.playSuccess();
+        });
+
+        // 2. 健康大考驗題庫
+        const quizData = [
+            {
+                q: "成年人衛福部定義的理想 BMI 標準區間是多少？",
+                options: ["15.0 ~ 18.5", "18.5 ~ 24.0", "24.0 ~ 27.0", "27.0 ~ 30.0"],
+                ans: 1,
+                detail: "國內衛福部建議成人的理想 BMI 值為 18.5 ≤ BMI < 24.0。"
+            },
+            {
+                q: "計算 BMI 的正確公式是什麼？",
+                options: ["體重(kg) / 身高(m)²", "體重(kg) / 身高(cm)", "身高(cm) / 體重(kg)", "體重(kg) × 身高(m)"],
+                ans: 0,
+                detail: "BMI 計算公式為：體重（公斤）除以身高（公尺）的平方。"
+            },
+            {
+                q: "若某人身高 100cm、體重 20kg，其 BMI 為多少？",
+                options: ["15.0", "18.0", "20.0", "25.0"],
+                ans: 2,
+                detail: "20 / (1.0)² = 20.0。"
+            },
+            {
+                q: "除了 BMI 之外，評估腹部肥胖與心血管疾病風險的重要指標是？",
+                options: ["腰圍", "鞋號", "臂展", "頭圍"],
+                ans: 0,
+                detail: "腰圍能有效反應內臟脂肪堆積情形，男性≥90cm、女性≥80cm 即為腹部肥胖。"
+            },
+            {
+                q: "維持健康體態的最有效基礎方法為何？",
+                options: ["長期節食不吃晚餐", "均衡飲食搭配規律運動", "只喝水不吃固體食物", "熬夜消耗熱量"],
+                ans: 1,
+                detail: "均衡飲食與每週規律有氧/肌力運動是維繫健康體態的最根本途徑。"
+            }
+        ];
+
+        let currentQuizIndex = 0;
+
+        function loadQuiz(index) {
+            const q = quizData[index];
+            document.getElementById('questionNum').innerText = `題目 ${index + 1} / ${quizData.length}`;
+            document.getElementById('questionText').innerText = q.q;
+
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            const feedback = document.getElementById('quizFeedback');
+            feedback.className = 'hidden p-3 rounded-xl text-xs font-bold border';
+            document.getElementById('nextQuizBtn').classList.add('hidden');
+
+            q.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'opt-btn w-full p-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-sm text-left transition flex justify-between items-center';
+                btn.innerHTML = `<span>${String.fromCharCode(65 + i)}. ${opt}</span> <i class="fa-regular fa-circle text-slate-400"></i>`;
+                btn.addEventListener('click', () => handleQuizAnswer(i, btn));
+                container.appendChild(btn);
+            });
+        }
+
+        function handleQuizAnswer(selectedIndex, selectedBtn) {
+            const q = quizData[currentQuizIndex];
+            const allBtns = document.getElementById('optionsContainer').children;
+
+            for (let b of allBtns) b.disabled = true;
+
+            const feedback = document.getElementById('quizFeedback');
+            const isCorrect = (selectedIndex === q.ans);
+
+            if (isCorrect) {
+                sound.playSuccess();
+                addScore(20);
+                selectedBtn.className = 'w-full p-3 rounded-xl bg-emerald-500 text-white font-bold text-sm text-left flex justify-between items-center shadow-md';
+                selectedBtn.querySelector('i').className = 'fa-solid fa-circle-check text-white';
+                
+                feedback.className = 'p-3 rounded-xl text-xs font-bold border bg-emerald-50 border-emerald-300 text-emerald-900';
+                feedback.innerText = `✅ 答對了！ ${q.detail}`;
+            } else {
+                sound.playWrong();
+                selectedBtn.className = 'w-full p-3 rounded-xl bg-rose-500 text-white font-bold text-sm text-left flex justify-between items-center shadow-md';
+                selectedBtn.querySelector('i').className = 'fa-solid fa-circle-xmark text-white';
+
+                allBtns[q.ans].className = 'w-full p-3 rounded-xl bg-emerald-100 border border-emerald-400 text-emerald-900 font-bold text-sm text-left flex justify-between items-center';
+
+                feedback.className = 'p-3 rounded-xl text-xs font-bold border bg-rose-50 border-rose-300 text-rose-900';
+                feedback.innerText = `❌ 答錯了！正確答案為 ${String.fromCharCode(65 + q.ans)}。 ${q.detail}`;
+            }
+
+            feedback.classList.remove('hidden');
+            document.getElementById('nextQuizBtn').classList.remove('hidden');
+        }
+
+        document.getElementById('nextQuizBtn').addEventListener('click', () => {
+            sound.playClick();
+            currentQuizIndex = (currentQuizIndex + 1) % quizData.length;
+            loadQuiz(currentQuizIndex);
+        });
+
+        // 3. 積分與稱號系統
+        function addScore(pts) {
+            score += pts;
+            document.getElementById('totalScore').innerText = `${score} Pts`;
+
+            const rankBadge = document.getElementById('gameRank');
+            if (score >= 120) {
+                rankBadge.innerText = "健美大師";
+                rankBadge.className = "text-xl md:text-2xl font-black text-amber-300 animate-bounce";
+            } else if (score >= 60) {
+                rankBadge.innerText = "健康達人";
+                rankBadge.className = "text-xl md:text-2xl font-black text-cyan-300";
+            } else {
+                rankBadge.innerText = "新手";
+                rankBadge.className = "text-xl md:text-2xl font-black text-emerald-400";
+            }
+        }
+
+        // 頁面初始化
+        window.onload = () => {
+            loadQuiz(0);
+        };
+    </script>
+</body>
+</html>
